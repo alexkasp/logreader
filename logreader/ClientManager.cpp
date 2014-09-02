@@ -91,7 +91,7 @@ ClientManager::~ClientManager()
 ClientManager::ClientManager(boost::shared_ptr<boost::asio::ip::tcp::socket> sock) :
 clientsock(sock)
 {
-
+	LogPath = "c:\\work\\";
 }
 
 // This function only start execution of clientmanager
@@ -126,6 +126,11 @@ void ClientManager::WaitForCommand(boost::system::error_code ec)
 			{
 				Read(pt);
 			}
+			if (Action == "SetLogPath")
+			{
+				LogPath = pt.get<std::string>("LogPath");
+				clientsock->write_some(boost::asio::buffer("OK",2));
+			}
 		}
 		catch (std::exception& e)
 		{
@@ -156,7 +161,7 @@ int ClientManager::Find(boost::property_tree::ptree& pt)
 {
 	std::string filename = pt.get<std::string>("Filename");
 	std::string asktime = pt.get<std::string>("AskTime");
-	if (ClientManager::setposition("c:\\work\\" + filename, asktime, log))
+	if (ClientManager::setposition(LogPath + filename, asktime, log))
 		clientsock->write_some(boost::asio::buffer("OK", 2));
 	else
 		clientsock->write_some(boost::asio::buffer("ERROR", 5));

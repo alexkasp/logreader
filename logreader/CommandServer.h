@@ -7,6 +7,8 @@
 #include <boost\shared_ptr.hpp>
 #include <boost\asio\io_service.hpp>
 #else
+#define _WINSOCK_DEPRECATED_NO_WARNINGS 1
+
 #include <boost/asio.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/asio/io_service.hpp>

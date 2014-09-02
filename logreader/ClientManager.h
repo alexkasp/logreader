@@ -9,6 +9,8 @@
 #include <boost\date_time\posix_time\posix_time.hpp>
 #include <boost\property_tree\ptree.hpp>
 #else
+#define _WINSOCK_DEPRECATED_NO_WARNINGS 1
+
 #include <boost/asio.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/iostreams/stream.hpp>
@@ -25,6 +27,7 @@ class ClientManager
 	ClientManager();
 	boost::shared_ptr<boost::asio::ip::tcp::socket> clientsock;
 	std::ifstream log;
+	std::string LogPath;
 public:
 	static int setposition(std::string filename, std::string time, std::ifstream& log);
 	static boost::posix_time::ptime positonnewline(std::ifstream& log,
