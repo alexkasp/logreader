@@ -1,6 +1,5 @@
 #pragma once
-
-#ifdef BOOST_OS_WINDOWS
+#ifndef __linux__
 #define _WINSOCK_DEPRECATED_NO_WARNINGS 1
 #include <boost\asio.hpp>
 #include <boost\shared_ptr.hpp>

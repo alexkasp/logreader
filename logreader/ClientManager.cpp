@@ -10,6 +10,7 @@
 
 #include <iostream>
 #include <string>
+#include <cstring>
 
 int ClientManager::setposition(std::string filename,std::string time,std::ifstream& log)
 {
@@ -19,7 +20,7 @@ int ClientManager::setposition(std::string filename,std::string time,std::ifstre
 	log.getline(data, 2048);
 
 	char tmptime[22];
-	strncpy_s(tmptime, &data[1], 19);
+	strncpy(tmptime, &data[1], 19);
 	boost::posix_time::ptime asktime = boost::posix_time::time_from_string(time);
 	boost::posix_time::ptime stoptime;
 
@@ -70,7 +71,7 @@ boost::posix_time::ptime ClientManager::positonnewline(std::ifstream& log, char*
 			if (data[0] != '[')
 				continue;
 
-			strncpy_s(tmptime, 22, &data[1], 19);
+			strncpy(tmptime, &data[1], 19);
 			stoptime = boost::posix_time::time_from_string(tmptime);
 			std::cout << stoptime << std::endl;
 			return stoptime;

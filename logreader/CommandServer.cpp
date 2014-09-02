@@ -1,8 +1,17 @@
+
+
 #include "CommandServer.h"
-#include <boost\bind.hpp>
 #include <iostream>
+#ifdef __linux__
+#include <boost/shared_ptr.hpp>
+#include <boost/thread.hpp>
+#include <boost/bind.hpp>
+#else
 #include <boost\shared_ptr.hpp>
 #include <boost\thread.hpp>
+#include <boost\bind.hpp>
+
+#endif
 #include "ClientManager.h"
 
 CommandServer* CommandServer::workserv = nullptr;
@@ -89,7 +98,7 @@ void CommandServer::do_accept(boost::shared_ptr<boost::asio::ip::tcp::socket> so
 // hear we get command and do action
 int CommandServer::WorkWithClient(boost::shared_ptr<boost::asio::ip::tcp::socket> sptr)
 {
-	
+	std::cout<<"ACCEPT COnnection"<<std::endl;
 	ClientManager* manager = new ClientManager(sptr);
 	manager->Start();
 	return 0;

@@ -1,7 +1,8 @@
 #include "CommandServer.h"
 
 
-void main()
+int main()
 {
 	CommandServer::Instance().StartListen();
+	return 0;
 }
