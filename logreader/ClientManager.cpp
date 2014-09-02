@@ -119,18 +119,23 @@ void ClientManager::WaitForCommand(boost::system::error_code ec)
 			{
 				Ping();
 			}
-			if (Action == "Find")
+			else if (Action == "Find")
 			{
 				Find(pt);
 			}
-			if (Action == "Read")
+			else if (Action == "Read")
 			{
 				Read(pt);
 			}
-			if (Action == "SetLogPath")
+			else if (Action == "SetLogPath")
 			{
 				LogPath = pt.get<std::string>("LogPath");
 				clientsock->write_some(boost::asio::buffer("OK",2));
+			}
+			else
+			{
+				std::cout << "WRONG COMMAND" << std::endl;
+				clientsock->write_some(boost::asio::buffer("WRONG_COMMAND",13));
 			}
 		}
 		catch (std::exception& e)
