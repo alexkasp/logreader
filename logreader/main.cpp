@@ -1,5 +1,5 @@
 #include "CommandServer.h"
-
+#include <iostream>
 #define VERSION_NUMBER 0.1
 int main()
 {

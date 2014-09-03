@@ -28,6 +28,7 @@ class ClientManager
 	std::ifstream log;
 	std::string LogPath;
 public:
+	int GetNextCall();
 	static int setposition(std::string filename, std::string time, std::ifstream& log);
 	static boost::posix_time::ptime positonnewline(std::ifstream& log,
 		char* data, char* tmptime, boost::posix_time::ptime& stoptime);

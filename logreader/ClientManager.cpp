@@ -1,6 +1,9 @@
+#define _CRT_SECURE_NO_WARNINGS
 #include "ClientManager.h"
 
+
 #ifdef BOOST_OS_WINDOWS
+
 #include <boost\property_tree\json_parser.hpp>
 #include <boost\bind.hpp>
 #else
@@ -36,10 +39,11 @@ int ClientManager::setposition(std::string filename,std::string time,std::ifstre
 	ClientManager::positonnewline(log, data, tmptime, stoptime);
 	while (stoptime != asktime)
 	{
-		std::streamoff findstep = fullsize / step;
+		step *= 2;
+		std::streamoff findstep = ptr / step;
 		if (findstep <= 1)
 			return 0;
-
+		std::cout << "stoptime = " << stoptime << " asktime = " << asktime << std::endl;
 		if (stoptime > asktime)
 		{
 			fullsize = fullsize - findstep;
@@ -53,7 +57,7 @@ int ClientManager::setposition(std::string filename,std::string time,std::ifstre
 		    std::cout<<"posit "<<fullsize<<std::endl;
 		log.seekg(fullsize, log.beg);
 		ClientManager::positonnewline(log, data, tmptime, stoptime);
-		step *= 2;
+		
 	}
 
 	
@@ -149,6 +153,10 @@ void ClientManager::WaitForCommand(boost::system::error_code ec)
 				LogPath = pt.get<std::string>("LogPath");
 				clientsock->write_some(boost::asio::buffer("OK",2));
 			}
+			else if (Action == "NextCall")
+			{
+				GetNextCall();
+			}
 			else
 			{
 				std::cout << "WRONG COMMAND" << std::endl;
@@ -172,6 +180,25 @@ void ClientManager::WaitForCommand(boost::system::error_code ec)
 	return;
 }
 
+int ClientManager::GetNextCall()
+{
+	char data[8096];
+	char tmptime[22];
+	boost::posix_time::ptime ptime;
+	const char INVITE_SIGNATURE[] = "INVITE sip:";
+	int invite_signature_length = strlen(INVITE_SIGNATURE);
+	while (log.getline(data, 8096))
+	{
+		if (strncmp(INVITE_SIGNATURE, &data[1], invite_signature_length) == 0)
+		{
+			clientsock->write_some(boost::asio::buffer(data, strlen(data)));
+			
+			return 1;
+		}
+	}
+	
+	return 0;
+}
 
 // Ping command - send answer PONG on request Ping
 int ClientManager::Ping()
@@ -198,9 +225,13 @@ int ClientManager::Read(boost::property_tree::ptree& pt)
 	int linecount = pt.get<int>("LineCount");
 	for (int i = 0; i < linecount; ++i)
 	{
-		log.getline(buf, maxlength);
-		clientsock->write_some(boost::asio::buffer(buf, strlen(buf)));
-		clientsock->read_some(boost::asio::buffer(buf, maxlength));
+		if (log.getline(buf, maxlength))
+		{
+			clientsock->write_some(boost::asio::buffer(buf, strlen(buf)));
+			clientsock->read_some(boost::asio::buffer(buf, maxlength));
+		}
+		else
+			return 0;
 	}
 	return 0;
 }
