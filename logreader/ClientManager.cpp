@@ -16,7 +16,10 @@ int ClientManager::setposition(std::string filename,std::string time,std::ifstre
 {
 	char data[2048];
 	//CommandServer::Instance().StartListen();
-	log.open(filename);
+	std::cout<<"Filename: "<<filename<<std::endl;
+	if(!log.is_open())
+	    log.open(filename);
+	
 	log.getline(data, 2048);
 
 	char tmptime[22];
@@ -24,6 +27,7 @@ int ClientManager::setposition(std::string filename,std::string time,std::ifstre
 	boost::posix_time::ptime asktime = boost::posix_time::time_from_string(time);
 	boost::posix_time::ptime stoptime;
 
+	std::cout<<"Start positionning"<<std::endl;
 	log.seekg(0, log.end);
 	std::streamoff ptr = log.tellg();
 	int step = 2;
@@ -33,7 +37,7 @@ int ClientManager::setposition(std::string filename,std::string time,std::ifstre
 	while (stoptime != asktime)
 	{
 		std::streamoff findstep = fullsize / step;
-		if (findstep == 1)
+		if (findstep <= 1)
 			return 0;
 
 		if (stoptime > asktime)
@@ -44,6 +48,9 @@ int ClientManager::setposition(std::string filename,std::string time,std::ifstre
 		{
 			fullsize = fullsize + findstep;
 		}
+		if((fullsize==0)||(fullsize>ptr-1000))
+		    return 0;
+		    std::cout<<"posit "<<fullsize<<std::endl;
 		log.seekg(fullsize, log.beg);
 		ClientManager::positonnewline(log, data, tmptime, stoptime);
 		step *= 2;
@@ -55,6 +62,7 @@ int ClientManager::setposition(std::string filename,std::string time,std::ifstre
 
 boost::posix_time::ptime ClientManager::positonnewline(std::ifstream& log, char* data, char* tmptime, boost::posix_time::ptime& stoptime)
 {
+	//std::cout<<"posit_to_new_line "<<std::endl;
 	stoptime = boost::posix_time::time_from_string("1970-01-01 00:00:00");
 	std::streamoff ptr = log.tellg();
 	int position = 0;
@@ -64,14 +72,18 @@ boost::posix_time::ptime ClientManager::positonnewline(std::ifstream& log, char*
 		ptr = log.tellg();
 
 		char in = log.get();
+		//std::cout<<"["<<ptr<<"]";
 		if (in == '\n')
 		{
+			
 			//get line from file until space is encountered and put it in data1
 			log.getline(data, 2048);
+			//std::cout<<data<<std::endl;
 			if (data[0] != '[')
 				continue;
 
 			strncpy(tmptime, &data[1], 19);
+			tmptime[19]=0;
 			stoptime = boost::posix_time::time_from_string(tmptime);
 			std::cout << stoptime << std::endl;
 			return stoptime;
@@ -92,7 +104,11 @@ ClientManager::~ClientManager()
 ClientManager::ClientManager(boost::shared_ptr<boost::asio::ip::tcp::socket> sock) :
 clientsock(sock)
 {
+#ifndef __linux__
 	LogPath = "c:\\work\\";
+#else
+	LogPath = "/var/log/asterisk/";
+#endif
 }
 
 // This function only start execution of clientmanager
@@ -106,6 +122,7 @@ void ClientManager::Start()
 // Handler for read - hear come initiation of command session
 void ClientManager::WaitForCommand(boost::system::error_code ec)
 {
+	std::cout<<"Command income"<<std::endl;
 	std::stringstream data;
 	data << buf;
 	if (!ec)
@@ -142,6 +159,8 @@ void ClientManager::WaitForCommand(boost::system::error_code ec)
 		{
 
 			std::string What = e.what();
+			std::cout<<What<<std::endl;
+			clientsock->write_some(boost::asio::buffer(What));
 		}
 	
 		Start();
