@@ -195,7 +195,7 @@ int ClientManager::FindText(boost::property_tree::ptree &pt)
     while(log.getline(data,8096))
     {	
 	std::string tmp(data);
-	if(std::string::npos == tmp.find(SearchSign))
+	if(std::string::npos != tmp.find(SearchSign))
 	{
 	    clientsock->write_some(boost::asio::buffer(data,strlen(data)));
 	    return 1;
