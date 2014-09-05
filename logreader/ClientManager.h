@@ -44,5 +44,7 @@ public:
 	// hear we posit read pointer to asked time and read data
 	int Read(boost::property_tree::ptree& pt);
 	int Find(boost::property_tree::ptree& pt);
+	// Read back for n count lines
+	int ReadBack(boost::property_tree::ptree& pt);
 };
 

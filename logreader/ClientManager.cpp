@@ -43,7 +43,7 @@ int ClientManager::setposition(std::string filename,std::string time,std::ifstre
 		std::streamoff findstep = ptr / step;
 		if (findstep <= 1)
 			return 0;
-		std::cout << "stoptime = " << stoptime << " asktime = " << asktime << std::endl;
+	
 		if (stoptime > asktime)
 		{
 			fullsize = fullsize - findstep;
@@ -74,7 +74,7 @@ boost::posix_time::ptime ClientManager::positonnewline(std::ifstream& log, char*
 	{
 		log.seekg(ptr - 2, log.beg);
 		ptr = log.tellg();
-
+		if (ptr < 0) break;
 		char in = log.get();
 		//std::cout<<"["<<ptr<<"]";
 		if (in == '\n')
@@ -161,6 +161,10 @@ void ClientManager::WaitForCommand(boost::system::error_code ec)
 			{
 				FindText(pt);
 			}
+			else if (Action == "ReadBack")
+			{
+				ReadBack(pt);
+			}
 			else
 			{
 				std::cout << "WRONG COMMAND" << std::endl;
@@ -202,7 +206,7 @@ int ClientManager::FindText(boost::property_tree::ptree &pt)
 int ClientManager::GetNextCall()
 {
 	char data[8096];
-	char tmptime[22];
+	
 	boost::posix_time::ptime ptime;
 	const char INVITE_SIGNATURE[] = "INVITE sip:";
 	int invite_signature_length = strlen(INVITE_SIGNATURE);
@@ -242,15 +246,44 @@ int ClientManager::Find(boost::property_tree::ptree& pt)
 int ClientManager::Read(boost::property_tree::ptree& pt)
 {
 	int linecount = pt.get<int>("LineCount");
+	int Mode = (pt.get<std::string>("Mode")=="UnSafe")?0:1;
 	for (int i = 0; i < linecount; ++i)
 	{
 		if (log.getline(buf, maxlength))
 		{
 			clientsock->write_some(boost::asio::buffer(buf, strlen(buf)));
-			clientsock->read_some(boost::asio::buffer(buf, maxlength));
+			if (Mode)
+				clientsock->read_some(boost::asio::buffer(buf, maxlength));
 		}
 		else
+		{
+			const char ENDOFFILE[] = "ERROR: End of file";
+			clientsock->write_some(boost::asio::buffer(ENDOFFILE, strlen(ENDOFFILE)));
 			return 0;
+		}
+			
 	}
 	return 0;
+}
+
+// Read back for n count lines
+int ClientManager::ReadBack(boost::property_tree::ptree& pt)
+{
+	int count = pt.get<int>("LineCount");
+	char data[8096];
+	char tmptime[22];
+	boost::posix_time::ptime stoptime = boost::posix_time::time_from_string("1970-01-01 00:00:00");
+	boost::posix_time::ptime faketime;
+	
+	log.seekg(-1*count, log.cur);
+	if (ClientManager::positonnewline(log, data, tmptime, faketime) == stoptime)
+	{
+		const char msg[] = "ERROR ReadBack";
+		clientsock->write_some(boost::asio::buffer(msg, strlen(msg)));
+		return 0;
+	}
+	
+	log.getline(data,8096);
+	clientsock->write_some(boost::asio::buffer(data, strlen(data)));
+	return 1;
 }
