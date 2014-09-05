@@ -184,6 +184,8 @@ void ClientManager::WaitForCommand(boost::system::error_code ec)
 	}
 	
 	std::cout << "Error!!! we close socket" << std::endl;
+	log.close();
+	log.clear();
 	clientsock->close();
 	return;
 }
