@@ -157,6 +157,10 @@ void ClientManager::WaitForCommand(boost::system::error_code ec)
 			{
 				GetNextCall();
 			}
+			else if (Action == "FindText")
+			{
+				FindText(pt);
+			}
 			else
 			{
 				std::cout << "WRONG COMMAND" << std::endl;
@@ -180,6 +184,21 @@ void ClientManager::WaitForCommand(boost::system::error_code ec)
 	return;
 }
 
+int ClientManager::FindText(boost::property_tree::ptree &pt)
+{
+    char data[8096];
+    std::string SearchSign = pt.get<std::string>("SearchFor");
+    while(log.getline(data,8096))
+    {	
+	std::string tmp(data);
+	if(std::string::npos == tmp.find(SearchSign))
+	{
+	    clientsock->write_some(boost::asio::buffer(data,strlen(data)));
+	    return 1;
+	}
+    }
+    return 0;
+}
 int ClientManager::GetNextCall()
 {
 	char data[8096];
