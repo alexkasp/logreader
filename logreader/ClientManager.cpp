@@ -15,14 +15,14 @@
 #include <string>
 #include <cstring>
 
-int ClientManager::setposition(std::string filename,std::string time,std::ifstream& log)
+int ClientManager::setposition(std::string filename, std::string time, std::ifstream& log, std::streamoff& size)
 {
 	char data[2048];
 	//CommandServer::Instance().StartListen();
 	std::cout<<"Filename: "<<filename<<std::endl;
 	if(!log.is_open())
-	    log.open(filename);
-	
+		log.open(filename, std::ios::in);
+	log.seekg(0, log.beg);
 	log.getline(data, 2048);
 
 	char tmptime[22];
@@ -33,6 +33,7 @@ int ClientManager::setposition(std::string filename,std::string time,std::ifstre
 	std::cout<<"Start positionning"<<std::endl;
 	log.seekg(0, log.end);
 	std::streamoff ptr = log.tellg();
+	size = ptr;
 	int step = 2;
 	std::streamoff fullsize = ptr/step;
 	log.seekg(fullsize, log.beg);
@@ -192,18 +193,46 @@ void ClientManager::WaitForCommand(boost::system::error_code ec)
 
 int ClientManager::FindText(boost::property_tree::ptree &pt)
 {
-    char data[8096];
-    std::string SearchSign = pt.get<std::string>("SearchFor");
-    while(log.getline(data,8096))
-    {	
-	std::string tmp(data);
-	if(std::string::npos != tmp.find(SearchSign))
+	char data[8096];
+	std::string SearchSign = pt.get<std::string>("SearchFor");
+	std::streamoff currentposition;
+	std::string textposition = "PROGRESS:";
+	int procentposition = 0;
+	int tmpprocent = 0;
+	while (log.getline(data, 8096))
 	{
-	    clientsock->write_some(boost::asio::buffer(data,strlen(data)));
-	    return 1;
+		std::string tmp(data);
+		if (std::string::npos != tmp.find(SearchSign))
+		{
+			const char foundok[] = "FINDTEXTOK";
+			clientsock->write_some(boost::asio::buffer(foundok, strlen(foundok)));
+			clientsock->read_some(boost::asio::buffer(buf, maxlength));
+			clientsock->write_some(boost::asio::buffer(data, strlen(data)));
+			return 1;
+		}
+
+		currentposition = log.tellg();
+		tmpprocent= (100 * currentposition)/filesize;
+		if (tmpprocent-1>procentposition)
+		{ 
+			procentposition = tmpprocent;
+			std::string tmpposition = textposition + std::to_string(procentposition);
+			clientsock->write_some(boost::asio::buffer(tmpposition, tmpposition.length()));
+			clientsock->read_some(boost::asio::buffer(buf, maxlength));
+			if (strncmp(buf, "PROGRESS",8) != 0)
+			{ 
+				const char nofound[] = "ERROR";
+				clientsock->write_some(boost::asio::buffer(nofound, strlen(nofound)));
+				return 0;
+			}
+				
+		}
+		
+
 	}
-    }
-    return 0;
+	const char nofound[] = "ERROR";
+	clientsock->write_some(boost::asio::buffer(nofound, strlen(nofound)));
+	return 0;
 }
 int ClientManager::GetNextCall()
 {
@@ -238,7 +267,7 @@ int ClientManager::Find(boost::property_tree::ptree& pt)
 {
 	std::string filename = pt.get<std::string>("Filename");
 	std::string asktime = pt.get<std::string>("AskTime");
-	if (ClientManager::setposition(LogPath + filename, asktime, log))
+	if (ClientManager::setposition(LogPath + filename, asktime, log,filesize))
 		clientsock->write_some(boost::asio::buffer("OK", 2));
 	else
 		clientsock->write_some(boost::asio::buffer("ERROR", 5));

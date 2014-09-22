@@ -27,10 +27,11 @@ class ClientManager
 	boost::shared_ptr<boost::asio::ip::tcp::socket> clientsock;
 	std::ifstream log;
 	std::string LogPath;
+	std::streamoff filesize;
 public:
 	int FindText(boost::property_tree::ptree &pt);
 	int GetNextCall();
-	static int setposition(std::string filename, std::string time, std::ifstream& log);
+	static int setposition(std::string filename, std::string time, std::ifstream& log,std::streamoff& size);
 	static boost::posix_time::ptime positonnewline(std::ifstream& log,
 		char* data, char* tmptime, boost::posix_time::ptime& stoptime);
 	ClientManager(boost::shared_ptr<boost::asio::ip::tcp::socket> sock);
