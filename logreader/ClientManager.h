@@ -35,6 +35,7 @@ class ClientManager
 	void SendError();
 	int SendSipPacket(int sendcounter);
 	int SetPositionToBeginSipHeader(int& outsendcounter);
+	int GetBookNark();
 public:
 	int ReadCallSIP(boost::property_tree::ptree &pt);
 	int ReadCallPBX(boost::property_tree::ptree &pt);

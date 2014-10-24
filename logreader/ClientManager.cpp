@@ -176,6 +176,14 @@ void ClientManager::WaitForCommand(boost::system::error_code ec)
 			{
 				ReadCallPBX(pt);
 			}
+			else if (Action == "SetBookMark")
+			{
+
+			}
+			else if (Action == "GetBookMark")
+			{
+
+			}
 			else
 			{
 				std::cout << "WRONG COMMAND" << std::endl;
@@ -201,6 +209,12 @@ void ClientManager::WaitForCommand(boost::system::error_code ec)
 	return;
 }
 
+int ClientManager::GetBookNark()
+{
+	std::streamoff ptr;
+	ptr = log.tellg();
+	return 0;
+}
 int ClientManager::SetPositionToBeginSipHeader(int& outsendcounter)
 {
 	char data[8096];
@@ -212,7 +226,7 @@ int ClientManager::SetPositionToBeginSipHeader(int& outsendcounter)
 		ClientManager::LineBack(log);
 		std::cout << "SetPosition" << std::endl;
 		log.getline(data, 8096);
-		if (strstr(data, STARTPACKETSIGNATURE.c_str()))
+		if (strstr(data, STARTPACKETSIGNATURE.c_str())||(data[0]=='['))
 			return 1;
 		if (outsendcounter > 150)
 			return 0;
