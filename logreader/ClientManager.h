@@ -21,6 +21,10 @@
 #include <fstream>
 class ClientManager
 {
+	const std::string STARTPACKETSIGNATURE = "<------------->";
+
+	const std::string ENDSESSIONSIGNATURE = "Really destroying SIP dialog";
+	const std::string ENDCALLLOG = "afterprocess.php";
 	enum{ maxlength = 1024 };
 	char buf[maxlength];
 	ClientManager();
@@ -28,9 +32,15 @@ class ClientManager
 	std::ifstream log;
 	std::string LogPath;
 	std::streamoff filesize;
+	void SendError();
+	int SendSipPacket(int sendcounter);
+	int SetPositionToBeginSipHeader(int& outsendcounter);
 public:
+	int ReadCallSIP(boost::property_tree::ptree &pt);
+	int ReadCallPBX(boost::property_tree::ptree &pt);
 	int FindText(boost::property_tree::ptree &pt);
 	int GetNextCall();
+	static int LineBack(std::ifstream& log);
 	static int setposition(std::string filename, std::string time, std::ifstream& log,std::streamoff& size);
 	static boost::posix_time::ptime positonnewline(std::ifstream& log,
 		char* data, char* tmptime, boost::posix_time::ptime& stoptime);

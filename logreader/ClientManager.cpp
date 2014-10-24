@@ -64,7 +64,9 @@ int ClientManager::setposition(std::string filename, std::string time, std::ifst
 	
 	return 1;
 }
-
+/*
+	Move read cursor  to first symbol of prev line
+*/
 boost::posix_time::ptime ClientManager::positonnewline(std::ifstream& log, char* data, char* tmptime, boost::posix_time::ptime& stoptime)
 {
 	//std::cout<<"posit_to_new_line "<<std::endl;
@@ -166,6 +168,14 @@ void ClientManager::WaitForCommand(boost::system::error_code ec)
 			{
 				ReadBack(pt);
 			}
+			else if (Action == "ReadCallSIP")
+			{
+				ReadCallSIP(pt);
+			}
+			else if (Action == "ReadCallLog")
+			{
+				ReadCallPBX(pt);
+			}
 			else
 			{
 				std::cout << "WRONG COMMAND" << std::endl;
@@ -191,6 +201,116 @@ void ClientManager::WaitForCommand(boost::system::error_code ec)
 	return;
 }
 
+int ClientManager::SetPositionToBeginSipHeader(int& outsendcounter)
+{
+	char data[8096];
+	outsendcounter = 0;
+	while (true)
+	{
+		++outsendcounter;
+		ClientManager::LineBack(log);
+		ClientManager::LineBack(log);
+		std::cout << "SetPosition" << std::endl;
+		log.getline(data, 8096);
+		if (strstr(data, STARTPACKETSIGNATURE.c_str()))
+			return 1;
+		if (outsendcounter > 150)
+			return 0;
+	}
+}
+int ClientManager::SendSipPacket(int sendcounter)
+{
+	char data[8096];
+	while (true)
+	{
+		--sendcounter;
+		log.getline(data, 8096);
+		clientsock->write_some(boost::asio::buffer(data, strlen(data)));
+		clientsock->read_some(boost::asio::buffer(buf, maxlength));
+		if (!strstr(buf, "Receive"))
+		{
+			SendError();
+			return 0;
+		}
+		if ((sendcounter<0) && (data[0] == '[') || (strstr(data, STARTPACKETSIGNATURE.c_str())))
+			return 1;
+
+	}
+}
+void ClientManager::SendError()
+{
+	const char nofound[] = "ERROR";
+	clientsock->write_some(boost::asio::buffer(nofound, strlen(nofound)));
+	return;
+}
+
+int ClientManager::ReadCallPBX(boost::property_tree::ptree &pt)
+{
+	char data[8096];
+	std::string CallID = pt.get<std::string>("CallID");
+
+	std::streamoff ptr;
+	ptr = log.tellg();
+	while (log.getline(data, 8096))
+	{
+		if (strstr(data, CallID.c_str()))
+		{
+			clientsock->write_some(boost::asio::buffer(data, strlen(data)));
+			clientsock->read_some(boost::asio::buffer(buf, maxlength));
+			if (!strstr(buf, "Receive"))
+			{
+				SendError();
+				return 0;
+			}
+			if (strstr(data, ENDCALLLOG.c_str()))
+			{
+				const char endsip[] = "ENDLOG";
+				clientsock->write_some(boost::asio::buffer(endsip, strlen(endsip)));
+				return 1;
+			}
+		}
+	}
+	log.seekg(ptr, log.cur);
+	SendError();
+	return 0;
+}
+
+int ClientManager::ReadCallSIP(boost::property_tree::ptree &pt)
+{
+	char data[8096];
+	std::string CallID = pt.get<std::string>("CallID");
+	
+	std::streamoff ptr;
+	ptr = log.tellg();
+	while (log.getline(data, 8096))
+	{
+		if (strstr(data, CallID.c_str()))
+		{
+			
+			if (strstr(data, ENDSESSIONSIGNATURE.c_str()))
+			{
+				const char endsip[] = "ENDSIP";
+				clientsock->write_some(boost::asio::buffer(endsip, strlen(endsip)));
+				return 1;
+			}
+			if (data[0] == '[')
+				continue;
+			int sendcounter = 0;
+			
+			if (SetPositionToBeginSipHeader(sendcounter))
+				SendSipPacket(sendcounter);
+			else
+			{
+				break;
+			}
+				
+			
+		}
+	}
+	log.seekg(ptr, log.cur);
+	SendError();
+	return 0;
+}
 int ClientManager::FindText(boost::property_tree::ptree &pt)
 {
 	char data[8096];
@@ -221,8 +341,7 @@ int ClientManager::FindText(boost::property_tree::ptree &pt)
 			clientsock->read_some(boost::asio::buffer(buf, maxlength));
 			if (strncmp(buf, "PROGRESS",8) != 0)
 			{ 
-				const char nofound[] = "ERROR";
-				clientsock->write_some(boost::asio::buffer(nofound, strlen(nofound)));
+				SendError();
 				return 0;
 			}
 				
@@ -297,6 +416,20 @@ int ClientManager::Read(boost::property_tree::ptree& pt)
 	return 0;
 }
 
+int ClientManager::LineBack(std::ifstream& log)
+{
+	log.seekg(-2, log.cur);
+	while (true)
+	{
+		log.seekg(- 2, log.cur);
+		auto ptr = log.tellg();
+		if (ptr < 0) return 0;
+		char in = log.get();
+		if (in == '\n')
+			return 1;
+	}
+}
+
 // Read back for n count lines
 int ClientManager::ReadBack(boost::property_tree::ptree& pt)
 {
@@ -306,13 +439,17 @@ int ClientManager::ReadBack(boost::property_tree::ptree& pt)
 	boost::posix_time::ptime stoptime = boost::posix_time::time_from_string("1970-01-01 00:00:00");
 	boost::posix_time::ptime faketime;
 	
-	log.seekg(-1*count, log.cur);
-	if (ClientManager::positonnewline(log, data, tmptime, faketime) == stoptime)
-	{
-		const char msg[] = "ERROR ReadBack";
-		clientsock->write_some(boost::asio::buffer(msg, strlen(msg)));
-		return 0;
+	for (int i = 0; i < count;i++)
+	{ 
+		//log.seekg(-4, log.cur);
+		if (!ClientManager::LineBack(log))
+		{
+			const char msg[] = "ERROR ReadBack";
+			clientsock->write_some(boost::asio::buffer(msg, strlen(msg)));
+			return 0;
+		}
 	}
+	
 	
 	log.getline(data,8096);
 	clientsock->write_some(boost::asio::buffer(data, strlen(data)));
