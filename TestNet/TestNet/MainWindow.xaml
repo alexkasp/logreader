@@ -1,0 +1,98 @@
+﻿<Window x:Class="TestNet.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="MainWindow" Height="350" Width="1043.4">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"></RowDefinition>
+            <RowDefinition Height="Auto"></RowDefinition>
+            <RowDefinition Height="Auto"></RowDefinition>
+            <RowDefinition Height="Auto"></RowDefinition>
+            <RowDefinition Height="Auto"></RowDefinition>
+            <RowDefinition></RowDefinition>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto"></ColumnDefinition>
+            <ColumnDefinition></ColumnDefinition>
+        </Grid.ColumnDefinitions>
+
+        <StackPanel>
+            <StackPanel Orientation="Horizontal">
+                <TextBox x:Name="HostTB" TextWrapping="Wrap" Text="msk4.sipuni.com" Width="150"/>
+                <Button  x:Name="ConnectBtn" Content="Connect"  VerticalAlignment="Top" Width="75" Click="ConnectBtn_Click"/>
+                <Button  x:Name="Ping" Content="Ping"  VerticalAlignment="Top" Width="75" Click="Ping_Click"/>
+            </StackPanel>
+            <StackPanel x:Name="AfterConnectSP">
+                <StackPanel Orientation="Horizontal">
+                    <TextBox x:Name="LogPathTB" Height="23" TextWrapping="Wrap" Text="/var/log/asterisk/" Width="150" HorizontalAlignment="Left"/>
+                    <Button x:Name="SetLogPathBtn" Content="SetLogPath" Width="75" Click="SetLogPathBtn_Click"  />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal">
+                    <ComboBox x:Name="TimeTB"  Text="2014-09-02 14:14:08" Width="150" IsEditable="True"/>
+                    <ComboBox x:Name="LogNameTB" Text="full" Width="120" SelectedIndex="0" IsEditable="True">
+                        <ComboBoxItem Content="full"/>
+                        <ComboBoxItem Content="full-20140914.gz"/>
+                        <ComboBoxItem Content="messages"/>
+                    </ComboBox>
+                    <Button x:Name="SetPositionBtn" Content="SetPosition" Width="75" Click="SetPositionBtn_Click"/>
+                    <Button x:Name="NextCallBtn" Content="NextCall" Width="75" Click="NextCallBtn_Click"/>
+                </StackPanel>
+
+                <StackPanel Grid.Row="1" Orientation="Horizontal">
+
+                </StackPanel>
+                <StackPanel Grid.Row="2" Orientation="Vertical">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBox x:Name="LineCountTB" TextWrapping="Wrap" Text="25000" Width="120"/>
+                        <Button  x:Name="ReadBtn" Content="Read"   VerticalAlignment="Top" Width="75" Click="ReadBtn_Click"/>
+
+                        <Button x:Name="AsyncReadBtn" Content="AsyncRead"  VerticalAlignment="Top" Click="AsyncReadBtn_Click"/>
+                        <Button x:Name="StopReadBtn" Content="Stop read" Width="75" Click="StopReadBtn_Click"/>
+                        <CheckBox x:Name="ReadModeChKB" Content="Safe Mode" IsChecked="True" VerticalAlignment="Bottom" Margin="10,0,0,0"/>
+
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal">
+                        <TextBox x:Name="ReadBackTB" TextWrapping="Wrap" Text="50" Width="120"/>
+                        <Button x:Name="ReadBackBtn" Content="ReadBack" Width="75" Click="ReadBackBtn_Click"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <Button x:Name="ClearBtn" Content="ClearBtn" Width="75" Click="ClearBtn_Click" HorizontalAlignment="Left"/>
+                        <Button x:Name="RefreshBtn" Content="Refresh log" Width="75" Click="RefreshBtn_Click"/>
+                    </StackPanel>
+                </StackPanel >
+
+                <StackPanel Grid.Row="3">
+                    <ProgressBar x:Name="LoadPb" MinWidth="200" MinHeight="20" HorizontalAlignment="Stretch" Margin="2" Minimum="0"/>
+                </StackPanel>
+            </StackPanel>
+            <StackPanel Grid.Row="4" Orientation="Horizontal">
+
+                <ComboBox x:Name="FindTB"  HorizontalAlignment="Left" Text="" Width="175" Margin="0,0,0,0.2" IsEditable="True"/>
+                <Button x:Name="FindBtn" Width="75" Click="FindBtn_Click" ToolTip="Find text in client window" Content="Find"/>
+
+                <Button x:Name="ColoredBtn" Content="MakeColor" Width="75" Click="ColoredBtn_Click"/>
+                <ComboBox x:Name="FindTextTB" Text="" Width="175" Margin="0,0,0,0.2" IsEditable="True"/>
+                <Button x:Name="FindTextBtn" Content="FindText" Width="75" ToolTip="Find text in log file on the server" Click="FindTextBtn_Click"/>
+                <Button x:Name ="StopFindTextBtn" Content="Stop" Width="75" Click="StopFindTextBtn_Click"/>
+
+            </StackPanel>
+        </StackPanel>
+        <StackPanel Orientation="Horizontal" Grid.Column="2">
+            <StackPanel Orientation="Vertical" Width="200" HorizontalAlignment="Right" Margin="0,0,0,-0.2">
+                <Button x:Name="ReadCallBtn" Content="ReadCall" Click="ReadCallBtn_Click"/>
+                <ComboBox x:Name="ReadCallTB" Height="23"  Text="" Width="200" IsEditable="True"/>
+
+            </StackPanel>
+            <StackPanel Orientation="Vertical" Width="200" HorizontalAlignment="Right" Margin="0,0,0,-0.2">
+                <Button x:Name="ReadSIPBtn" Content="ReadSIP" Click="ReadSIPBtn_Click"/>
+                <ComboBox x:Name="ReadSIPTB" Height="23"  Text="" Width="200" IsEditable="True"/>
+
+            </StackPanel>
+
+        </StackPanel>
+        <RichTextBox Grid.Row="5" Grid.ColumnSpan="2" x:Name="LogRTB" HorizontalAlignment="Left" VerticalAlignment="Top">
+
+        </RichTextBox>
+    </Grid>
+</Window>
